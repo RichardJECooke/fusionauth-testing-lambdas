@@ -1,18 +1,16 @@
-# Example Django Application
+# Testing Lambdas Application
 
-This repo holds an example Python/Django application that uses FusionAuth as the identity provider.
-
-This application was built by following the [Python/Django Quickstart](https://fusionauth.io/docs/quickstarts/quickstart-python-django-web).
+This repo holds a modified version of the FusionAuth 5 minute getting started guide. It uses the kickstart functionality to obviate manual configuration of FusionAuth.
 
 ## Project Contents
 
 The `docker-compose.yml` file and the `kickstart` directory are used to start and configure a local FusionAuth server.
 
-The `/complete-application` directory contains a fully working version of the application.
+The `/app` directory contains a fully working version of the application.
 
 ## Project Dependencies
 * Docker, for running FusionAuth
-* Python 3.8 or later, for running the Changebank Python application
+* Node.js 18 or later, for running the example application
 
 ## Running FusionAuth
 To run FusionAuth, just stand up the docker containers using `docker-compose`.
@@ -24,17 +22,14 @@ docker-compose up
 This will start a PostgreSQL database, and Elastic service, and the FusionAuth server.
 
 ## Running the Example App
-To run the application set up a Python virtual env and installg the project dependencies.
 
 ```shell
-cd complete-application && \
-python -m venv venv && \
-source venv/bin/activate && \
-pip install -r requirements.txt && \
-python /mysite/manage.py runserver
+cd app && \
+npm install && \
+npm start;
 ```
 
-Visit the local webserver at `http://localhost:8000/` and sign in using the credentials:
+Visit the local webserver at `http://localhost:3000/` and sign in using the credentials:
 
 * username: richard@example.com
 * password: password
