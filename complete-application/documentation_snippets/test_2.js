@@ -1,11 +1,18 @@
 test('test login returns JWT with "Goodbye World"', async function (t) {
   t.plan(1);
-  const result = await login();
-  t.ok(result.toLowerCase().includes('goodbye world'));
-  t.end();
+  const userId = uuidv4();
+  const email = await createRandomUser(userId);
+  try {
+    const result = await login(email);
+    t.ok(result.toLowerCase().includes('goodbye world'));
+    t.end();
+  }
+  finally {
+    await deleteUser(userId);
+  }
 });
 
-async function login() {
+async function login(userEmail) {
   try {
     const request  = {
       applicationId: applicationId,

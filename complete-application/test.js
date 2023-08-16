@@ -2,21 +2,27 @@ const client = require('@fusionauth/typescript-client');
 const jwt = require('jsonwebtoken');
 const test = require('tape');
 const fetchMock = require('fetch-mock');
+const { v4: uuidv4 } = require('uuid');
 
 const applicationId = 'e9fdb985-9173-4e01-9d73-ac2d60d1dc8e';
 const fusionUrl = 'http://localhost:9011';
-const userId = 'c924cd34-879a-430d-a0ac-87a3f98df2dd';
 const userPassword = 'password';
-const userEmail = 'richard@example.com';
 const username = 'lambdatestuser';
 
-// createUser();
+// createRandomUser(uuidv4());
 
 test('test login returns JWT with "Goodbye World"', async function (t) {
   t.plan(1);
-  const result = await login();
-  t.ok(result.toLowerCase().includes('goodbye world'));
-  t.end();
+  const userId = uuidv4();
+  const email = await createRandomUser(userId);
+  try {
+    const result = await login(email);
+    t.ok(result.toLowerCase().includes('goodbye world'));
+    t.end();
+  }
+  finally {
+    await deleteUser(userId);
+  }
 });
 
 test('test lambda rejects sanctioned emails and accepts others', async function (t) {
@@ -49,7 +55,7 @@ async function populate(jwt, user, registration) {
     jwt.isBanned = false;
 }
 
-async function login() {
+async function login(userEmail) {
   try {
     const request  = {
       applicationId: applicationId,
@@ -72,22 +78,9 @@ async function login() {
   }
 }
 
-async function populate(jwt, user, registration) {
-  const response = await fetch("https://issanctioned.example.com/api/banned?email=" + encodeURIComponent(user.email), {
-    method: "GET",
-    headers: { "Content-Type": "application/json" }
-  });
-  if (response.status === 200) {
-    const jsonResponse = await response.json();
-    jwt.isBanned = jsonResponse.isBanned;
-  }
-  else
-    jwt.isBanned = false;
-}
-
-
-async function createUser() {
+async function createRandomUser(userUUID) {
   try {
+    const randomEmail = new Date().getTime() + "@example.com";
     const request = {
       registration: {
         applicationId: applicationId,
@@ -98,7 +91,7 @@ async function createUser() {
       skipVerification: true,
       user: {
         active: true,
-        email: userEmail,
+        email: randomEmail,
         password: userPassword,
         username: username,
         registrations: [{
@@ -107,12 +100,29 @@ async function createUser() {
       }
     };
     const fusion = new client.FusionAuthClient('lambda_testing_key', fusionUrl);
-    const clientResponse = await fusion.register(userId, request);
+    const clientResponse = await fusion.register(userUUID, request);
     if (!clientResponse.wasSuccessful)
       throw Error(clientResponse);
     console.info('User created successfully');
-  } catch (e) {
+    return randomEmail;
+  }
+  catch (e) {
     console.error('Error creating user: ');
+    console.dir(e, { depth: null });
+    process.exit(1);
+  }
+}
+
+async function deleteUser(userUUID) {
+  try {
+    const fusion = new client.FusionAuthClient('lambda_testing_key', fusionUrl);
+    const clientResponse = await fusion.deleteUser(userUUID);
+    if (!clientResponse.wasSuccessful)
+      throw Error(clientResponse);
+    console.info(`User ${userUUID} deleted successfully`);
+  }
+  catch (e) {
+    console.error(`Error deleting user ${userUUID}: `);
     console.dir(e, { depth: null });
     process.exit(1);
   }
