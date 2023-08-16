@@ -3,3 +3,4 @@ node_modules/
 mysite/
 *.swp
 app/lambdas
+complete-application/lambdas
