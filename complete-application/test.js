@@ -42,6 +42,46 @@ test('test lambda rejects sanctioned emails and accepts others', async function 
   t.end();
 });
 
+test('test lambda rejects returns permissions based on role', async function (t) {
+  t.plan(3);
+
+  const jwt1 = {};
+  await populate2(jwt1, {registrations: [{roles: ['admin', 'viewer']}]}, {});
+  t.true(jwt1.permissions.includes('all'), 'Check admin and viewer has all permissions');
+
+  const jwt2 = {};
+  await populate2(jwt2, {registrations: [{roles: ['editor']}]}, {});
+  t.true(jwt2.permissions.includes('write'), 'Check editor has write permission');
+  t.true(jwt2.permissions.includes('read'), 'Check editor has read permission');
+
+  t.end();
+});
+
+async function populate(jwt, user, registration) {
+  const response = await fetch("https://issanctioned.example.com/api/banned?email=" + encodeURIComponent(user.email), {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  });
+  if (response.status === 200) {
+    const jsonResponse = await response.json();
+    jwt.isBanned = jsonResponse.isBanned;
+  }
+  else
+    jwt.isBanned = false;
+}
+
+async function populate2(jwt, user, registration) {
+  jwt.permissions = [];
+  if (user.registrations[0].roles.includes('admin'))
+    jwt.permissions.push('all');
+  else if (user.registrations[0].roles.includes('editor')) {
+    jwt.permissions.push('read');
+    jwt.permissions.push('write');
+  }
+  else if (user.registrations[0].roles.includes('viewer'))
+    jwt.permissions.push('read');
+}
+
 async function populate(jwt, user, registration) {
   const response = await fetch("https://issanctioned.example.com/api/banned?email=" + encodeURIComponent(user.email), {
     method: "GET",
